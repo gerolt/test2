@@ -1,4 +1,5 @@
 FindSimilarString <- function(x, FR=0.2, ignore.case){
+  x <- as.character(x)
   if(any(nchar(na.omit(unique(x))) <= 3)){
     message('Warning message: If a length of string is too low, it may work incorrectly')
   }
