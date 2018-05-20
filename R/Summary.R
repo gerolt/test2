@@ -1,7 +1,7 @@
 Summary <- function(data){
   if(!require(ggplot2)) {install.packages("ggplot2"); library(ggplot2)}
   if(!require(lubridate)) {install.packages("lubridate")}
-
+  
   # Warning Message
   reserved_words <- c('if', 'else', 'while', 'function', 'for', 'in', 'next',
                       'break',' TRUE', 'FALSE','NULL', 'Inf', 'NaN', 'NA')
@@ -13,9 +13,9 @@ Summary <- function(data){
   NofNA <- function(x) sum(is.na(x))
   # Split
   con <- data[sapply(data, is.number)]
-  cat <- data[!sapply(data, is.number)]
-  dat <- data[!sapply(data, lubridate::is.Date)]
-
+  cat <- data[sapply(data, is.character)]
+  dat <- data[sapply(data, lubridate::is.Date)]
+  
   # Quantitative
   message('Calculating quantitative data..')
   CalcCon <- function(x){
@@ -42,11 +42,14 @@ Summary <- function(data){
     return(result)
   }
   con_dat <- CalcCon(con)
-
+  
   # Date
-  message('Calculating quantitative data..')
+  message('Calculating date data..')
   dat_dat <- CalcCon(dat)
-
+  for(i in c('Minimum', 'Q1', 'Mean', 'Median', 'Q3', 'Maximum')){
+    dat_dat[[i]] <- as.Date(dat_dat[[i]], origin='1970-1-1')
+  }
+  
   # Qualitative
   message('Calculating qualitative data..')
   CalcCat <- function(x){
@@ -77,94 +80,9 @@ Summary <- function(data){
     return(result)
   }
   cat_dat <- CalcCat(cat)
-
+  
   output <- list(Qualitative = cat_dat, Quantitative = con_dat, Date = dat_dat)
   message('Done')
 
-  # Qualitative Plot
-  correction <- ifelse(max(output$Qualitative$Cardinality)>20,
-                       max(output$Qualitative$Cardinality),20)
-  output$Qualitative.Plot <-
-    ggplot(output$Qualitative) +
-    geom_bar(
-      aes(x=reorder(Variable, -output$Qualitative$Missing.R), y=Missing.R),
-      stat = 'identity', fill='dodgerblue3', alpha=0.8
-    ) +
-    geom_bar(
-      aes(x=Variable, y=-Cardinality/correction),
-      stat = 'identity', fill='deeppink4',alpha=0.8
-    ) +
-    scale_y_continuous(
-      name = 'Missing Ratio(%)',
-      breaks = c(0,0.5,1),
-      limits = c(-1,1),
-      labels = c(0, 0.5,1)*100,
-      sec.axis = sec_axis(
-        ~.*correction, name = 'Cardianlity',
-        breaks = c(-1,-0.5,0) * correction,
-        labels = c(-1,-0.5,0) * -correction
-      )
-    ) +
-    labs(x='Variables') +
-    geom_hline(yintercept = 0, size=1.3, linetype='dashed')
-  # Qualitative Plot
-  output$Quantitative.Plot <-
-    ggplot(output$Quantitative) +
-    geom_bar(
-      aes(x=reorder(Variable, -output$Quantitative$Missing.R), y=Missing.R),
-      stat = 'identity', fill='dodgerblue3', alpha=0.8
-    ) +
-    geom_bar(
-      aes(x=Variable, y=-Cardinality.R),
-      stat = 'identity', fill='deeppink4',alpha=0.8
-    ) +
-    scale_y_continuous(
-      name = 'Missing Ratio(%)',
-      breaks = c(0,0.5,1),
-      limits = c(-1,1),
-      labels = c(0,0.5,1)*100,
-      sec.axis = sec_axis(
-        ~., name = 'Cardianlity Ratio(%)',
-        breaks = c(0,-0.5,-1),
-        labels = c(0,-0.5,-1)*100
-      )
-    ) +
-    labs(x='Variables') +
-    geom_hline(yintercept = 0, size=1.3, linetype='dashed')
-
   invisible(output)
   }
-
-
-# missing comment
-#cat('Missig Problem : "',
-#    sum(c(output$Quantitative$Missing.R>=0.3,
-#          output$Qualitative$Missing.R>=0.3))/length(data),
-#    '% " (The number of variables which missing ratio is over than 30%)'
-#)
-#misspbm <- c(
-#  output$Quantitative[which(output$Quantitative$Missing.R>=0.3),]$Variable,
-#  output$Qualitative[which(output$Qualitative$Missing.R>=0.3),]$Variable
-#)
-#misspbm <- if(length(misspbm)==0) misspbm <- NA else misspbm
-#cat('\nMissing PBM Variables : "',
-#    paste(misspbm, collapse = ', '),'(', length(table(misspbm)), ')',
-#    '" (Names of variables which missing ratio is over than 30%)'
-#)
-
-# cardinality comment
-#cat('\n\nCardinality Problem : "',
-#    sum(c(output$Qualitative$Cardinality>=20,
-#          output$Quantitative$Cardinality.R<0.2))/length(data),
-#    '% " (The number of variables which has cardinality problem)'
-#)
-#cardpbm <- na.omit(unique(c(
-#  output$Quantitative[which(output$Qualitative$Cardinality>=20),]$Variable,
-#  output$Qualitative[which(output$Quantitative$Cardinality.R<0.2),]$Variable
-#)))
-#cardpbm <- if(length(cardpbm)==0) cardpbm <- NA else cardpbm
-#cat('\nCardinality PBM Variables : "',
-#    paste(cardpbm, collapse = ', '),'(', length(table(cardpbm)), ') "'
-#)
-#cat('\nCardinality PBM(Qualitative) : Cardinality is more than 20') ##
-#cat('\nCardinality PBM(Quantitative) : Cardinality Ratio is less than 20%') ##
