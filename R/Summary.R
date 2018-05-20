@@ -1,5 +1,6 @@
 Summary <- function(data){
   if(!require(ggplot2)) {install.packages("ggplot2"); library(ggplot2)}
+  if(!require(lubridate)) {install.packages("lubridate")}
 
   # Warning Message
   reserved_words <- c('if', 'else', 'while', 'function', 'for', 'in', 'next',
@@ -13,6 +14,7 @@ Summary <- function(data){
   # Split
   con <- data[sapply(data, is.number)]
   cat <- data[!sapply(data, is.number)]
+  dat <- data[!sapply(data, lubridate::is.Date)]
 
   # Quantitative
   message('Calculating quantitative data..')
@@ -40,6 +42,10 @@ Summary <- function(data){
     return(result)
   }
   con_dat <- CalcCon(con)
+
+  # Date
+  message('Calculating quantitative data..')
+  dat_dat <- CalcCon(dat)
 
   # Qualitative
   message('Calculating qualitative data..')
@@ -72,41 +78,8 @@ Summary <- function(data){
   }
   cat_dat <- CalcCat(cat)
 
-  output <- list(Qualitative = cat_dat, Quantitative = con_dat)
+  output <- list(Qualitative = cat_dat, Quantitative = con_dat, Date = dat_dat)
   message('Done')
-
-  # missing comment
-  cat('Missig Problem : "',
-      sum(c(output$Quantitative$Missing.R>=0.3,
-            output$Qualitative$Missing.R>=0.3))/length(data),
-      '% " (The number of variables which missing ratio is over than 30%)'
-  )
-  misspbm <- c(
-    output$Quantitative[which(output$Quantitative$Missing.R>=0.3),]$Variable,
-    output$Qualitative[which(output$Qualitative$Missing.R>=0.3),]$Variable
-  )
-  misspbm <- if(length(misspbm)==0) misspbm <- NA else misspbm
-  cat('\nMissing PBM Variables : "',
-      paste(misspbm, collapse = ', '),'(', length(table(misspbm)), ')',
-      '" (Names of variables which missing ratio is over than 30%)'
-  )
-
-  # cardinality comment
-  cat('\n\nCardinality Problem : "',
-      sum(c(output$Qualitative$Cardinality>=20,
-            output$Quantitative$Cardinality.R<0.2))/length(data),
-      '% " (The number of variables which has cardinality problem)'
-  )
-  cardpbm <- na.omit(unique(c(
-    output$Quantitative[which(output$Qualitative$Cardinality>=20),]$Variable,
-    output$Qualitative[which(output$Quantitative$Cardinality.R<0.2),]$Variable
-  )))
-  cardpbm <- if(length(cardpbm)==0) cardpbm <- NA else cardpbm
-  cat('\nCardinality PBM Variables : "',
-      paste(cardpbm, collapse = ', '),'(', length(table(cardpbm)), ') "'
-  )
-  cat('\nCardinality PBM(Qualitative) : Cardinality is more than 20') ##
-  cat('\nCardinality PBM(Quantitative) : Cardinality Ratio is less than 20%') ##
 
   # Qualitative Plot
   correction <- ifelse(max(output$Qualitative$Cardinality)>20,
@@ -161,3 +134,37 @@ Summary <- function(data){
 
   invisible(output)
   }
+
+
+# missing comment
+#cat('Missig Problem : "',
+#    sum(c(output$Quantitative$Missing.R>=0.3,
+#          output$Qualitative$Missing.R>=0.3))/length(data),
+#    '% " (The number of variables which missing ratio is over than 30%)'
+#)
+#misspbm <- c(
+#  output$Quantitative[which(output$Quantitative$Missing.R>=0.3),]$Variable,
+#  output$Qualitative[which(output$Qualitative$Missing.R>=0.3),]$Variable
+#)
+#misspbm <- if(length(misspbm)==0) misspbm <- NA else misspbm
+#cat('\nMissing PBM Variables : "',
+#    paste(misspbm, collapse = ', '),'(', length(table(misspbm)), ')',
+#    '" (Names of variables which missing ratio is over than 30%)'
+#)
+
+# cardinality comment
+#cat('\n\nCardinality Problem : "',
+#    sum(c(output$Qualitative$Cardinality>=20,
+#          output$Quantitative$Cardinality.R<0.2))/length(data),
+#    '% " (The number of variables which has cardinality problem)'
+#)
+#cardpbm <- na.omit(unique(c(
+#  output$Quantitative[which(output$Qualitative$Cardinality>=20),]$Variable,
+#  output$Qualitative[which(output$Quantitative$Cardinality.R<0.2),]$Variable
+#)))
+#cardpbm <- if(length(cardpbm)==0) cardpbm <- NA else cardpbm
+#cat('\nCardinality PBM Variables : "',
+#    paste(cardpbm, collapse = ', '),'(', length(table(cardpbm)), ') "'
+#)
+#cat('\nCardinality PBM(Qualitative) : Cardinality is more than 20') ##
+#cat('\nCardinality PBM(Quantitative) : Cardinality Ratio is less than 20%') ##
